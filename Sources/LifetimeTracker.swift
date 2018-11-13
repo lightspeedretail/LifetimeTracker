@@ -279,13 +279,15 @@ public extension LifetimeTrackable {
         var groups = [EntryGroupModel]()
 
         self.trackedGroups.filter { (_, group: LifetimeTracker.EntriesGroup) -> Bool in group.count > 0 }
-            .sorted { (lhs: (_, group: LifetimeTracker.EntriesGroup), rhs: (_, group: LifetimeTracker.EntriesGroup)) -> Bool in (lhs.group.maxCount - lhs.group.count) < (rhs.group.maxCount - rhs.group.count) }
+            .sorted { (lhs: (groupName: String, group: LifetimeTracker.EntriesGroup), rhs: (groupName: String, group: LifetimeTracker.EntriesGroup)) -> Bool in
+                (lhs.group.maxCount - lhs.group.count) < (rhs.group.maxCount - rhs.group.count)
+            }
             .forEach { (_, group: LifetimeTracker.EntriesGroup) in
                 let title = group.debugDescription
                 var entries = [String]()
 
                 group.entries.filter { (_, entry: LifetimeTracker.Entry) -> Bool in entry.count > 0 }
-                    .sorted { (lhs: (_, entry: LifetimeTracker.Entry), rhs: (_, entry: LifetimeTracker.Entry)) -> Bool in lhs.entry.count > rhs.entry.count }
+                    .sorted { (lhs: (entryName: String, entry: LifetimeTracker.Entry), rhs: (entryName: String, entry: LifetimeTracker.Entry)) -> Bool in lhs.entry.count > rhs.entry.count }
                     .forEach { (_, entry: LifetimeTracker.Entry) in entries.append(entry.debugDescription) }
 
                 groups.append((title: title, entries: entries))
