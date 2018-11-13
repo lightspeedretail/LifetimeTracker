@@ -9,7 +9,7 @@
 import Foundation
 
 /// Holds the properties which are needed to configure a `LifetimeTrackable`
-@objc public final class LifetimeConfiguration: NSObject {
+@objc public final class LifetimeConfiguration: NSObject, NSCopying {
     
     /// Maximum count of valid instances
     ///
@@ -88,8 +88,19 @@ import Foundation
         configuration.pointerString = "\(Unmanaged<AnyObject>.passUnretained(instance as AnyObject).toOpaque())"
         return configuration
     }
-}
 
+    public func copy(with zone: NSZone? = nil) -> Any {
+        guard let groupName = self.groupName else {
+            return LifetimeConfiguration(maxCount: self.maxCount)
+        }
+
+        guard let groupMaxCount = self.groupMaxCount else {
+            return LifetimeConfiguration(maxCount: self.maxCount, groupName: groupName)
+        }
+
+        return LifetimeConfiguration(maxCount: self.maxCount, groupName: groupName, groupMaxCount: groupMaxCount)
+    }
+}
 
 /// Defines a type that can have its lifetime tracked
 @objc public protocol LifetimeTrackable: class {
@@ -126,7 +137,7 @@ public extension LifetimeTrackable {
         case leaky
     }
     
-    public final class Entry {
+    public final class Entry: NSObject {
         var maxCount: Int
         let name: String
         fileprivate(set) var count: Int
@@ -150,6 +161,11 @@ public extension LifetimeTrackable {
         
         var lifetimeState: LifetimeState {
             return count > maxCount ? .leaky : .valid
+        }
+
+        override public var debugDescription: String {
+            let maxCountString = self.maxCount == Int.max ? "maxCount not specified" : "\(self.maxCount)"
+            return "\(self.name) (\(self.count)/\(maxCountString)):\n\(self.pointers.joined(separator: ", "))"
         }
     }
     
@@ -201,6 +217,11 @@ public extension LifetimeTrackable {
                 maxCount += entryMaxCountOffset
             }
         }
+
+        override public var debugDescription: String {
+            let maxCountString = self.maxCount == Int.max ? "maxCount not specified" : "\(self.maxCount)"
+            return "\(self.name ?? "name not specified") (\(self.count)/\(maxCountString))"
+        }
     }
     
     @objc public static func setup(onUpdate: @escaping UpdateClosure) {
@@ -221,12 +242,11 @@ public extension LifetimeTrackable {
         }
         
         let instanceType = type(of: instance)
-        var configuration = configuration
+        var configuration = configuration.copy() as! LifetimeConfiguration
         configuration.instanceName = String(describing: instanceType)
         configuration.pointerString = "\(Unmanaged<AnyObject>.passUnretained(instance as AnyObject).toOpaque())"
         
         func update(_ configuration: LifetimeConfiguration, with countDelta: Int) {
-            
             let groupName = configuration.groupName ?? Constants.Identifier.EntryGroup.none
             
             let group = self.trackedGroups[groupName] ?? EntriesGroup(name: groupName)
@@ -237,7 +257,7 @@ public extension LifetimeTrackable {
         
         update(configuration, with: +1)
         
-        onDealloc(of: instance) {
+        onDealloc(of: instance) { [configuration] in
             self.lock.lock()
             defer {
                 self.onUpdate(self.trackedGroups)
@@ -246,6 +266,37 @@ public extension LifetimeTrackable {
             
             update(configuration, with: -1)
         }
+    }
+
+    typealias EntryGroupModel = (title: String, entries: [String])
+
+    @objc public func summary() -> [String] {
+        lock.lock()
+        defer {
+            lock.unlock()
+        }
+
+        var groups = [EntryGroupModel]()
+
+        self.trackedGroups.filter { (_, group: LifetimeTracker.EntriesGroup) -> Bool in group.count > 0 }
+            .sorted { (lhs: (_, group: LifetimeTracker.EntriesGroup), rhs: (_, group: LifetimeTracker.EntriesGroup)) -> Bool in (lhs.group.maxCount - lhs.group.count) < (rhs.group.maxCount - rhs.group.count) }
+            .forEach { (_, group: LifetimeTracker.EntriesGroup) in
+                let title = group.debugDescription
+                var entries = [String]()
+
+                group.entries.filter { (_, entry: LifetimeTracker.Entry) -> Bool in entry.count > 0 }
+                    .sorted { (lhs: (_, entry: LifetimeTracker.Entry), rhs: (_, entry: LifetimeTracker.Entry)) -> Bool in lhs.entry.count > rhs.entry.count }
+                    .forEach { (_, entry: LifetimeTracker.Entry) in entries.append(entry.debugDescription) }
+
+                groups.append((title: title, entries: entries))
+            }
+
+        var summary = [String]()
+        for group in groups {
+            summary.append("\(group.title)\n\(group.entries.joined(separator: "\n"))")
+        }
+
+        return summary
     }
     
     override public var debugDescription: String {
