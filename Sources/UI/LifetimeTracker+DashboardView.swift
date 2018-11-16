@@ -183,6 +183,17 @@ extension LifetimeTrackerDashboardIntegration {
     @objc public func useCircularStyle() {
         self.style = .circular
     }
+
+    public func toggleVisibility() {
+        switch self.visibility {
+        case .alwaysHidden:
+            return
+        case .alwaysVisible:
+            self.visibility = .visibleWithIssuesDetected
+        case .visibleWithIssuesDetected:
+            self.visibility = .alwaysVisible
+        }
+    }
 }
 
 // MARK: - Deprecated Configuration Helper

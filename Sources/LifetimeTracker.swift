@@ -126,8 +126,9 @@ public extension LifetimeTrackable {
 }
 
 @objc public final class LifetimeTracker: NSObject {
-    public typealias UpdateClosure = (_ trackedGroups: [String: LifetimeTracker.EntriesGroup]) -> Void
+
     @objc public internal(set) static var instance: LifetimeTracker?
+    fileprivate var dashboardIntegration: LifetimeTrackerDashboardIntegration?
     private let lock = NSRecursiveLock()
     
     internal var trackedGroups = [String: EntriesGroup]()
@@ -224,14 +225,20 @@ public extension LifetimeTrackable {
         }
     }
     
-    @objc public static func setup(onUpdate: @escaping UpdateClosure) {
+    @objc public static func setup(_ dashboardIntegration: LifetimeTrackerDashboardIntegration) {
         assert(instance == nil)
-        instance = LifetimeTracker(onUpdate: onUpdate)
+        instance = LifetimeTracker(dashboardIntegration)
     }
     
-    private let onUpdate: UpdateClosure
-    private init(onUpdate: @escaping UpdateClosure) {
-        self.onUpdate = onUpdate
+    private let onUpdate: (_ trackedGroups: [String: LifetimeTracker.EntriesGroup]) -> Void
+    private init(_ dashboardIntegration: LifetimeTrackerDashboardIntegration) {
+        self.dashboardIntegration = dashboardIntegration
+        self.onUpdate = dashboardIntegration.refreshUI
+    }
+
+    @objc public func toggleVisibility() {
+        self.dashboardIntegration?.toggleVisibility()
+        self.onUpdate(self.trackedGroups)
     }
     
     internal func track(_ instance: Any, configuration: LifetimeConfiguration, file: String = #file) {
