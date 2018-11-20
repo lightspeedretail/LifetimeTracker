@@ -194,8 +194,6 @@ class CircularDashboardViewController: UIViewController, LifetimeTrackerViewable
     }()
 
     @objc func showPopover() {
-        formerStatusBarStyle = UIApplication.shared.statusBarStyle
-        UIApplication.shared.statusBarStyle = .default
         updatePopoverVisibility(to: .open)
     }
 

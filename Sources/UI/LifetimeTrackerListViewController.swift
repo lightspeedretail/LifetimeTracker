@@ -20,6 +20,10 @@ class LifetimeTrackerListViewController: UIViewController {
     weak var tableViewController: DashboardTableViewController?
     
     var dashboardViewModel = BarDashboardViewModel()
+
+    override var preferredStatusBarStyle: UIStatusBarStyle {
+        return .default
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
