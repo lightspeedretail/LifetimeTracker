@@ -83,9 +83,9 @@ typealias GroupModel = (color: UIColor, title: String, groupName: String, groupC
     
     public var visibility: Visibility = .visibleWithIssuesDetected
 
-    public var textColorForNoIssues: UIColor = .systemGreen
+    public static var textColorForNoIssues: UIColor = .systemGreen
 
-    public var textColorForLeakDetected: UIColor = .systemRed
+    public static var textColorForLeakDetected: UIColor = .systemRed
 
     convenience public init(
       visibility: Visibility,
@@ -96,27 +96,29 @@ typealias GroupModel = (color: UIColor, title: String, groupName: String, groupC
         self.init()
         self.visibility = visibility
         self.style = style
-        self.textColorForNoIssues = textColorForNoIssues
-        self.textColorForLeakDetected = textColorForLeakDetected
+        Self.textColorForNoIssues = textColorForNoIssues
+        Self.textColorForLeakDetected = textColorForLeakDetected
     }
 
     @objc public func refreshUI(trackedGroups: [String: LifetimeTracker.EntriesGroup]) {
-        DispatchQueue.main.async {
-            self.window.isHidden = self.visibility.windowIsHidden(hasIssuesToDisplay: self.hasIssuesToDisplay(from: trackedGroups))
+        let entries = Self.entries(from: trackedGroups)
+        let hasIssuesToDisplay = Self.hasIssuesToDisplay(from: trackedGroups)
+        let summary = Self.summary(from: trackedGroups)
 
-            let entries = self.entries(from: trackedGroups)
+        DispatchQueue.main.async {
+            self.window.isHidden = self.visibility.windowIsHidden(hasIssuesToDisplay: hasIssuesToDisplay)
             let vm = BarDashboardViewModel(
               leaksCount: entries.leaksCount,
-              summary: self.summary(from: trackedGroups),
+              summary: summary,
               sections: entries.groups,
-              textColorForNoIssues: self.textColorForNoIssues,
-              textColorForLeakDetected: self.textColorForLeakDetected
+              textColorForNoIssues: Self.textColorForNoIssues,
+              textColorForLeakDetected: Self.textColorForLeakDetected
             )
             self.lifetimeTrackerView.update(with: vm)
         }
     }
     
-    private func summary(from trackedGroups: [String: LifetimeTracker.EntriesGroup]) -> NSAttributedString {
+    private static func summary(from trackedGroups: [String: LifetimeTracker.EntriesGroup]) -> NSAttributedString {
         let groupNames = trackedGroups.keys.sorted(by: >)
         let leakyGroupSummaries = groupNames.filter { groupName in
             return trackedGroups[groupName]?.lifetimeState == .leaky
@@ -137,7 +139,7 @@ typealias GroupModel = (color: UIColor, title: String, groupName: String, groupC
             ]) + leakyGroupSummaries.attributed()
     }
     
-    private func entries(from trackedGroups: [String: LifetimeTracker.EntriesGroup]) -> (groups: [GroupModel], leaksCount: Int) {
+    private static func entries(from trackedGroups: [String: LifetimeTracker.EntriesGroup]) -> (groups: [GroupModel], leaksCount: Int) {
         var leaksCount = 0
         var sections = [GroupModel]()
         let filteredGroups = trackedGroups.filter { (_, group: LifetimeTracker.EntriesGroup) -> Bool in
@@ -178,7 +180,7 @@ typealias GroupModel = (color: UIColor, title: String, groupName: String, groupC
         return (groups: sections, leaksCount: leaksCount)
     }
     
-    func hasIssuesToDisplay(from trackedGroups: [String: LifetimeTracker.EntriesGroup]) -> Bool {
+    static func hasIssuesToDisplay(from trackedGroups: [String: LifetimeTracker.EntriesGroup]) -> Bool {
         let aDetectedIssue = trackedGroups.keys.first { trackedGroups[$0]?.lifetimeState == .leaky }
         return aDetectedIssue != nil
     }
