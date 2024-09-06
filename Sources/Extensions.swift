@@ -11,7 +11,6 @@ import Foundation
 internal extension String {
 
     var lt_localized: String {
-        let bundle = Bundle(for: LifetimeTracker.self)
-        return NSLocalizedString(self, bundle: bundle, comment: self)
+        Bundle.resolvedBundle.localizedString(forKey: self, value: self, table: nil)
     }
 }

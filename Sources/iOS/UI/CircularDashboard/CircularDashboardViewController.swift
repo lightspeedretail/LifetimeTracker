@@ -48,7 +48,7 @@ class CircularDashboardViewController: UIViewController, LifetimeTrackerViewable
     }
 
     class func makeFromNib() -> UIViewController & LifetimeTrackerViewable {
-        let storyboard = UIStoryboard(name: Constants.Storyboard.circularDashboard.name, bundle: Bundle(for: self))
+        let storyboard = UIStoryboard(name: Constants.Storyboard.circularDashboard.name, bundle: .resolvedBundle)
         return storyboard.instantiateViewController(withIdentifier: String(describing: self)) as! CircularDashboardViewController
     }
 
@@ -178,11 +178,18 @@ class CircularDashboardViewController: UIViewController, LifetimeTrackerViewable
     }
 
     private lazy var popoverWindow: UIWindow = {
+        var frame: CGRect = UIScreen.main.bounds
         let popoverWindow = UIWindow(frame: .zero)
-        popoverWindow.windowLevel = UIWindow.Level.normal
-        popoverWindow.frame =  UIScreen.main.bounds
 
-        let navigationController = UIStoryboard(name: Constants.Storyboard.circularDashboard.name, bundle: Bundle(for: CircularDashboardViewController.self)).instantiateInitialViewController()
+        if #available(iOS 13.0, *), let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            frame = windowScene.coordinateSpace.bounds
+            popoverWindow.windowScene = windowScene
+        }
+
+        popoverWindow.windowLevel = UIWindow.Level.normal
+        popoverWindow.frame =  frame
+
+        let navigationController = UIStoryboard(name: Constants.Storyboard.circularDashboard.name, bundle: .resolvedBundle).instantiateInitialViewController()
         popoverWindow.rootViewController = navigationController
         popoverWindow.rootViewController?.view.backgroundColor = UIColor.yellow
 
