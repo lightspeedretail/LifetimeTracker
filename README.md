@@ -181,10 +181,10 @@ end
 
 ## Surface last notification from the stack
 
-Sometimes it is useful to get information about last retain cycle in order to log it to external sources such as analytics/trackers. In order to do that we can update initial configuration with `onLeakDetected`:
+Sometimes it is useful to get information about last retain cycle in order to log it to external sources such as analytics/trackers. In order to do that we can update initial configuration with `onLeakChanged`:
 
 ```objc
-[LifetimeTracker setupOnLeakDetected:^(Entry * entry, EntriesGroup * group) {
+[LifetimeTracker setupOnLeakChanged:^(Entry * entry, EntriesGroup * group) {
     NSLog(@"POSSIBLE LEAK ALERT: %@ - current count %li, max count %li", entry.name, (long)entry.count, (long)entry.maxCount);
 } onUpdate:^(NSDictionary<NSString *,EntriesGroup *> * groups) {
     [dashboardIntegration refreshUIWithTrackedGroups: groups];
@@ -192,7 +192,7 @@ Sometimes it is useful to get information about last retain cycle in order to lo
 ```
 
 ```swift
-LifetimeTracker.setup(onLeakDetected: { entity, _ in
+LifetimeTracker.setup(onLeakChanged: { entity, _ in
 	log.warning("POSSIBLE LEAK ALERT: \(entity.name) - current count: \(entity.count), max count: \(entity.maxCount)")
 }, onUpdate: LifetimeTrackerDashboardIntegration(visibility: .alwaysVisible, style: .bar).refreshUI)
 ```
