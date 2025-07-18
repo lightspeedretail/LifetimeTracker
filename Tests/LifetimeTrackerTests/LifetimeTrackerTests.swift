@@ -146,7 +146,7 @@ class LifetimeTrackerTests: XCTestCase {
 
     func testLeakClosure() {
         var hasLeaked = false
-        LifetimeTracker.instance?.onLeakDetected = { entry, group in
+        LifetimeTracker.instance?.onLeakChanged = { entry, group in
             hasLeaked = true
         }
 
