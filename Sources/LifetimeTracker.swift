@@ -205,9 +205,9 @@ public extension LifetimeTrackable {
         }
     }
     
-    @objc public static func setup(onLeakDetected: LeakClosure? = nil, onUpdate: @escaping UpdateClosure) {
+    @objc public static func setup(onLeakChanged: LeakClosure? = nil, onUpdate: @escaping UpdateClosure) {
         assert(instance == nil)
-        instance = LifetimeTracker(onLeakDetected: onLeakDetected, onUpdate: onUpdate)
+        instance = LifetimeTracker(onLeakChanged: onLeakChanged, onUpdate: onUpdate)
         onUpdate([:])
     }
     
@@ -224,10 +224,10 @@ public extension LifetimeTrackable {
         }
     }
     
-    var onLeakDetected: LeakClosure?
-    private init(onLeakDetected: LeakClosure? = nil, onUpdate: @escaping UpdateClosure) {
+    var onLeakChanged: LeakClosure?
+    private init(onLeakChanged: LeakClosure? = nil, onUpdate: @escaping UpdateClosure) {
         self.onUpdate = onUpdate
-        self.onLeakDetected = onLeakDetected
+        self.onLeakChanged = onLeakChanged
     }
     
     public func track(_ instance: Any, configuration: LifetimeConfiguration, file: String = #file) {
@@ -249,8 +249,8 @@ public extension LifetimeTrackable {
             let group = self.trackedGroups[groupName] ?? EntriesGroup(name: groupName)
             group.updateEntry(configuration, with: countDelta)
 
-            if let entry = group.entries[configuration.instanceName], entry.count > entry.maxCount {
-                self.onLeakDetected?(entry, group)
+            if let entry = group.entries[configuration.instanceName] {
+                self.onLeakChanged?(entry, group)
             }
 
             self.trackedGroups[groupName] = group

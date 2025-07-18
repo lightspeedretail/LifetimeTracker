@@ -20,7 +20,7 @@
     LifetimeTrackerDashboardIntegration *dashboardIntegration = [LifetimeTrackerDashboardIntegration new];
     [dashboardIntegration setVisibleWhenIssueDetected];
     [dashboardIntegration useBarStyle];
-    [LifetimeTracker setupOnLeakDetected:^(Entry * _Nonnull entry, EntriesGroup * _Nonnull group) {
+    [LifetimeTracker setupOnLeakChanged:^(Entry * _Nonnull entry, EntriesGroup * _Nonnull group) {
         NSLog(@"Leak info:%@-%@",entry.name,group.name);
     } onUpdate:^(NSDictionary<NSString *,EntriesGroup *> * groups) {
         [dashboardIntegration refreshUIWithTrackedGroups: groups];
