@@ -143,6 +143,7 @@ class CircularDashboardViewController: UIViewController, LifetimeTrackerViewable
             ? vm.textColorForNoIssues
             : vm.textColorForLeakDetected
         leaksTitleLabel?.text = vm.leaksCount == 1 ? "word.leak".lt_localized : "word.leaks".lt_localized
+        leaksTitleLabel?.textColor = .black
 
         if hideOption.shouldUIBeShown(oldModel: dashboardViewModel, newModel: vm) {
             hideOption = .none
